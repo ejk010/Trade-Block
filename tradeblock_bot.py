@@ -71,11 +71,11 @@ def get_current_block_events():
             if not details_div:
                 continue
 
-            # Remove commissioner links
+            # Remove commissioner actions
             for commish in details_div.find_all("div", class_="commishLink"):
                 commish.decompose()
 
-            # Convert links to Discord markdown
+            # Convert player links to Discord markdown
             for a_tag in details_div.find_all("a", href=True):
                 href = a_tag["href"]
                 if not href.startswith("http"):
