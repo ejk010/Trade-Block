@@ -1,0 +1,41 @@
+name: Monitor Trade Block Alerts
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check-tradeblock:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Run trade block monitor
+        env:
+          DISCORD_TRADEBLOCK_WEBHOOK_URL: ${{ secrets.DISCORD_TRADEBLOCK_WEBHOOK_URL }}
+        run: python tradeblock_bot.py
+
+      - name: Commit tracked trade block items
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          touch last_tradeblock.txt
+          git add last_tradeblock.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Update logged trade block events"
+            git push
+          fi
