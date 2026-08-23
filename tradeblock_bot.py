@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 # --- Configuration ---
 BASE_URL = "https://www.pennantchase.com"
-LEAGUE_URL = f"{BASE_URL}/league/baseball/home?lgid=691"
+LEAGUE_URL = f"{BASE_URL}/league/baseball/transactionlog?lgid=691"
 WEBHOOK_URL = os.environ.get("DISCORD_TRADEBLOCK_WEBHOOK_URL")
 LOG_FILE = "last_tradeblock.txt"
 
@@ -18,6 +18,7 @@ TEAM_NAME_MAP = {
     "Chicago Cubs": "<@&773897833211625473>",
     "Chicago White Sox": "<@&622615457299693578>",
     "Cincinnati Reds": "<@&773898419143442432>",
+    "Cleveland Guardians": "<@&773898193041358879>",
     "Cleveland Indians": "<@&773898193041358879>",
     "Colorado Rockies": "<@&773898540321079316>",
     "Detroit Tigers": "<@&622615931625144341>",
@@ -30,10 +31,12 @@ TEAM_NAME_MAP = {
     "Minnesota Twins": "<@&728718027645780018>",
     "New York Mets": "<@&622613734896041994>",
     "New York Yankees": "<@&622952290428387329>",
-    "Oakland Athletics": "<@&773898540321079316>",
+    "Oakland Athletics": "<@&773897507272261683>",
     "Philadelphia Phillies": "<@&622614284979011595>",
     "Pittsburgh Pirates": "<@&622615936234684416>",
+    "Cardinals": "<@&622613261841596426>",
     "St. Louis Cardinals": "<@&622613261841596426>",
+    "Padres": "<@&622618093868548097>",
     "San Diego Padres": "<@&622618093868548097>",
     "San Francisco Giants": "<@&622615034157203469>",
     "Seattle Mariners": "<@&622612991413714975>",
@@ -71,11 +74,9 @@ def get_current_block_events():
             if not details_div:
                 continue
 
-            # Remove commissioner actions
             for commish in details_div.find_all("div", class_="commishLink"):
                 commish.decompose()
 
-            # Convert player links to Discord markdown
             for a_tag in details_div.find_all("a", href=True):
                 href = a_tag["href"]
                 if not href.startswith("http"):
@@ -97,7 +98,7 @@ def get_current_block_events():
 
         return events
     except Exception as e:
-        print(f"Error fetching page: {e}")
+        print(f"Error fetching transaction page: {e}")
         return []
 
 def read_seen_events():
@@ -128,7 +129,8 @@ if not WEBHOOK_URL:
 current_events = get_current_block_events()
 seen_events = read_seen_events()
 
-unseen_events = [(category, text) for category, text in current_events if text not in seen_events]
+# Preserves chronological order (oldest first)
+unseen_events = [(category, text) for category, text in reversed(current_events) if text not in seen_events]
 
 if unseen_events:
     new_event_texts = []
